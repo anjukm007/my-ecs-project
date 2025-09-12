@@ -1,4 +1,3 @@
-:q
 name: CI/CD for ECS with Terraform
 
 on:
