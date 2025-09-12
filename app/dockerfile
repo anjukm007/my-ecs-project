@@ -1,0 +1,10 @@
+# Hello welcome to the Dockerfile!
+# This Dockerfile sets up a simple Nginx server to serve static files.
+# It copies the contents of the current directory to the Nginx HTML directory.
+#kjklhk
+
+FROM nginx:alpine
+
+COPY . /usr/share/nginx/html
+
+EXPOSE 80
