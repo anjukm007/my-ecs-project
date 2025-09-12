@@ -20,7 +20,8 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ap-south-1
+      #    aws-region: ${{ secrets.AWS_REGION }}
 
       # Login to Amazon ECR
       - name: Login to Amazon ECR
@@ -50,7 +51,8 @@ jobs:
           terraform init \
             -backend-config="bucket=my-ecs-terraform-state" \
             -backend-config="key=ecs/terraform.tfstate" \
-            -backend-config="region=${{ secrets.AWS_REGION }}"
+            -backend-config="region=ap-south-1"
+      #      -backend-config="region=${{ secrets.AWS_REGION }}"
 
       # Terraform Plan
       - name: Terraform Plan
