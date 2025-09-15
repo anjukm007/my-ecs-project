@@ -1,64 +1,65 @@
-name: CI/CD for ECS with Terraform
+name: Deploy to ECS
 
 on:
   push:
     branches:
       - main
+    tags:
+      - 'v*.*.*'   # triggers workflow if a Git tag like v1.0.0 is pushed
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REGISTRY: 490617140445.dkr.ecr.ap-south-1.amazonaws.com
+  ECR_REPO: my-app
+  TF_WORKING_DIR: infra/terraform   # path where your terraform code is stored
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repository
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # Configure AWS credentials
-      - name: Configure AWS Credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: arn:aws:iam::<your-account-id>:role/<github-actions-role>
+          aws-region: ${{ env.AWS_REGION }}
 
-      # Login to Amazon ECR
-      - name: Login to Amazon ECR
+      - name: Log in to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Build and push Docker image
-      - name: Build, Tag, and Push Docker image to ECR
+      - name: Determine Docker Image Tag
+        id: docker_tag
         run: |
-          IMAGE_TAG=${{ github.sha }}
-          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY=${{ secrets.ECR_REPOSITORY }}
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./app
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            # Workflow triggered by Git tag
+            IMAGE_TAG=${GITHUB_REF##*/}   # extract tag name, e.g., v1.0.0
+          else
+            # Workflow triggered by branch push → auto-increment version
+            IMAGE_TAG=v${GITHUB_RUN_NUMBER}
+          fi
+          echo "Using Docker tag: $IMAGE_TAG"
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
-      # Setup Terraform
+      - name: Build, Tag, and Push Docker image
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPO:${{ env.IMAGE_TAG }} .
+          docker push $ECR_REGISTRY/$ECR_REPO:${{ env.IMAGE_TAG }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.9.5
 
-      # Terraform Init
       - name: Terraform Init
-        working-directory: ./infra
-        run: |
-          terraform init \
-            -backend-config="bucket=my-ecs-terraform-state" \
-            -backend-config="key=ecs/terraform.tfstate" \
-            -backend-config="region=${{ secrets.AWS_REGION }}"
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
 
-      # Terraform Plan
       - name: Terraform Plan
-        working-directory: ./infra
-        run: terraform plan -var="image_url=${{ env.image }}"
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -var "image_tag=${{ env.IMAGE_TAG }}"
 
-      # Terraform Apply
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main'
-        working-directory: ./infra
-        run: terraform apply -auto-approve -var="image_url=${{ env.image }}"
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve -var "image_tag=${{ env.IMAGE_TAG }}"
