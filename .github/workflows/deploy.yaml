@@ -11,7 +11,7 @@ env:
   AWS_REGION: ap-south-1
   ECR_REGISTRY: 490617140445.dkr.ecr.ap-south-1.amazonaws.com
   ECR_REPO: my-app
-  TF_WORKING_DIR: infra/terraform   # path where your terraform code is stored
+  TF_WORKING_DIR: infra   # path where your terraform code is stored
 
 jobs:
   deploy:
