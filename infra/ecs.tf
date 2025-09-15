@@ -74,6 +74,11 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+
+variable "docker_image_tag" {
+  description = "Docker image tag for ECS"
+}
+
 # ECS Task Definition
 resource "aws_ecs_task_definition" "this" {
   family                   = "my-app-task"
@@ -86,7 +91,7 @@ resource "aws_ecs_task_definition" "this" {
   container_definitions = jsonencode([
     {
       name      = "my-app"
-      image     = "490617140445.dkr.ecr.ap-south-1.amazonaws.com/my-app:latest"
+      image     = "490617140445.dkr.ecr.ap-south-1.amazonaws.com/my-app:${var.docker_image_tag}"
       essential = true
       portMappings = [
         {
