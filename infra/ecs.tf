@@ -105,36 +105,36 @@ resource "aws_ecs_task_definition" "this" {
 }
 
 # ALB
-resource "aws_lb" "this" {
-  name               = "ecs-alb"
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.ecs_sg.id]
-  subnets            = data.aws_subnets.default.ids
-}
+#resource "aws_lb" "this" {
+#  name               = "ecs-alb"
+#  load_balancer_type = "application"
+#  security_groups    = [aws_security_group.ecs_sg.id]
+#  subnets            = data.aws_subnets.default.ids
+#}
 
-resource "aws_lb_target_group" "this" {
-  name     = "ecs-tg"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = data.aws_vpc.default.id
-  target_type = "ip"   # 👈 Important for Fargate
+#resource "aws_lb_target_group" "this" {
+#  name     = "ecs-tg"
+#  port     = 80
+#  protocol = "HTTP"
+#  vpc_id   = data.aws_vpc.default.id
+#  target_type = "ip"   # 👈 Important for Fargate
 
-  health_check {
-    path = "/"
-    port = "80"
-  }
-}
+#  health_check {
+#    path = "/"
+#    port = "80"
+#  }
+#}
 
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.this.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.this.arn
-  }
-}
+#resource "aws_lb_listener" "http" {
+#  load_balancer_arn = aws_lb.this.arn
+#  port              = "80"
+#  protocol          = "HTTP"
+#
+#  default_action {
+#    type             = "forward"
+#    target_group_arn = aws_lb_target_group.this.arn
+#  }
+#}
 
 # ECS Service
 resource "aws_ecs_service" "this" {
@@ -150,15 +150,15 @@ resource "aws_ecs_service" "this" {
     assign_public_ip = true
   }
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.this.arn
-    container_name   = "my-app"
-    container_port   = 80
-  }
+  #load_balancer {
+  #  target_group_arn = aws_lb_target_group.this.arn
+  #  container_name   = "my-app"
+  #  container_port   = 80
+  #}
 
-  depends_on = [aws_lb_listener.http]
-}
+  #depends_on = [aws_lb_listener.http]
+#}
 
-output "alb_dns_name" {
-  value = aws_lb.this.dns_name
-}
+#output "alb_dns_name" {
+#  value = aws_lb.this.dns_name
+#}
